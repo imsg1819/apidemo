@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { width: 90%; max-width: 600px; margin: 50px auto; padding: 20px; background: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; }
+        input[type="text"] { width: calc(100% - 100px); padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; margin-left: 10px; border: none; background: #28a745; color: white; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #218838; }
+        ul { list-style-type: none; padding: 0; }
+        li { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <h1>To-Do List</h1>
+        <input type="text" id="taskInput" placeholder="Add a new task..." />
+        <button id="addTaskBtn">Add Task</button>
+        <ul id="taskList"></ul>
+    </div>
+    
+    <script>
+        const taskInput = document.getElementById('taskInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskList = document.getElementById('taskList');
+
+        const fetchTasks = async () => {
+            const response = await fetch('http://localhost:5000/tasks'); // Adjust URL if necessary
+            const tasks = await response.json();
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${task.name}</span>
+                    <button onclick="deleteTask(${task.id})">Delete</button>
+                    <button onclick="editTask(${task.id}, '${task.name}')">Edit</button>
+                `;
+                taskList.appendChild(li);
+            });
+        };
+
+        const addTask = async () => {
+            const taskName = taskInput.value.trim();
+            if (taskName) {
+                await fetch('http://localhost:5000/tasks', { // Adjust URL if necessary
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: taskName }),
+                });
+                taskInput.value = '';
+                fetchTasks();
+            }
+        };
+
+        const deleteTask = async (id) => {
+            await fetch(`http://localhost:5000/tasks/${id}`, { method: 'DELETE' }); // Adjust URL if necessary
+            fetchTasks();
+        };
+
+        const editTask = async (id, name) => {
+            const newName = prompt('Edit task name:', name);
+            if (newName) {
+                await fetch(`http://localhost:5000/tasks/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName }),
+                });
+                fetchTasks();
+            }
+        };
+
+        addTaskBtn.addEventListener('click', addTask);
+        fetchTasks();
+    </script>
+</body>
+</html>
